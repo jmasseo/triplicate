@@ -18,7 +18,7 @@ DEFAULT_GRAVITY = 3
 RESOURCE_PATH = "resources"
 levels = []
 # ON_KEY_RELEASE apply negative vector on key release.
-ON_KEY_RELEASE = True
+ON_KEY_RELEASE = False
 
 
 class ObjectLoader:
@@ -52,11 +52,18 @@ class PoopFactory(Factory):
         return Poop(self.color, self.val)
 
 
+class FactoryWeight:
+    def __init__(self, factory, r):
+        self.factory = factory
+        self.range = r
+
+
 class WeightedObjectLoader(ObjectLoader):
     def __init__(self, tr, factories):
         super().__init__()
         self.factories = factories
         self.tr = tr
+        self.t = 0
 
     def load(self, tick):
         if tick % self.tr == 0:
@@ -65,6 +72,31 @@ class WeightedObjectLoader(ObjectLoader):
             for factory in self.factories:
                 if x in factory.range:
                     return factory.factory.create()
+        return None
+
+
+class SequenceFactoryObjectLoader(ObjectLoader):
+    def __init__(self, tr, objects):
+        self.tr = tr
+        self.objects = objects
+
+    def load(self, tick):
+        if tick % self.tr == 0:
+            self.t += 1
+            if len(self.objects) > 0:
+                return self.objects.pop().load()
+            return None
+
+
+class SequenceObjectLoader(ObjectLoader):
+    def __init__(self, tr, objects):
+        self.tr = tr
+        self.objects = objects
+
+    def load(self, tick):
+        if tick % self.tr == 0:
+            self.t += 1
+            return self.objects.pop()
 
 
 class RBObjectLoader(ObjectLoader):
@@ -113,7 +145,7 @@ class RBPObjectLoader(ObjectLoader):
 
 
 class RGBPObjectLoader(ObjectLoader):
-    def __init__(self,tr):
+    def __init__(self, tr):
         self.t = 0
         self.tr = tr
 
@@ -215,8 +247,8 @@ class Level:
                                           self.bucket_list[self.selected_bucket].width * 1.2,
                                           self.bucket_list[self.selected_bucket].color, (self.tick % 12) + 2, 0)
         arcade.draw_text("Time Left {:d}".format(int((self.length - self.tick) / 60)), (SCREEN_WIDTH / 6) * 4,
-                         SCREEN_HEIGHT - (SCREEN_HEIGHT/10), arcade.color.BLACK, 60)
-        arcade.draw_text("Score: {}".format(self.score), 0, (SCREEN_HEIGHT / 10)*9,
+                         SCREEN_HEIGHT - (SCREEN_HEIGHT / 10), arcade.color.BLACK, 60)
+        arcade.draw_text("Score: {}".format(self.score), 0, (SCREEN_HEIGHT / 10) * 9,
                          arcade.color.RED, 64)
         if self.tick > self.length:
             arcade.draw_text("GAME OVER", (SCREEN_WIDTH / 5) * 1, (SCREEN_HEIGHT / 6) * 3, arcade.color.BLACK, 128)
@@ -353,6 +385,38 @@ class Level3(Level):
         self.object_list = arcade.SpriteList()
         self.length = 60 * 90
         self.background = arcade.load_texture("resources/OfficeSpacePrinterScene.jpg")
+
+    def update(self):
+        super().update()
+        if self.tick > self.length:
+            self.run = False
+
+    def draw(self):
+        super().draw()
+
+
+class Level4(Level):
+    def __init__(self):
+        super().__init__()
+        self.bucket_list = arcade.SpriteList()
+        self.bucket_list.append(Bucket((255, 0, 0, 255), [IsFormCriteria(), IsColorCriteria((255, 0, 0))]))
+        self.bucket_list.append(Bucket((0, 255, 0, 255), [IsFormCriteria(), IsColorCriteria((0, 255, 0))]))
+        self.bucket_list.append(Bucket((0, 0, 255, 255), [IsFormCriteria(), IsColorCriteria((0, 0, 255))]))
+        self.bucket_list.append(Bucket((255, 0, 255, 255), [IsFormCriteria(), OrCriteria(IsColorCriteria((255, 0, 0)),
+                                                                                         IsColorCriteria(
+                                                                                             (0, 0, 255)))]))
+        self.bucket_list[0].center_x = SCREEN_WIDTH / 5
+        self.bucket_list[1].center_x = (SCREEN_WIDTH / 5) * 4
+        self.bucket_list[2].center_x = (SCREEN_WIDTH / 5) * 3
+        self.bucket_list[3].center_x = (SCREEN_WIDTH / 5) * 2
+
+        self.object_loader = WeightedObjectLoader(60, [FactoryWeight(FormFactory((255, 0, 0, 255), "R"), range(0, 40)),
+                                                       FactoryWeight(FormFactory((0, 255, 0, 255), "G"), range(40, 50)),
+                                                       FactoryWeight(FormFactory((0, 0, 255, 255), "B"), range(50, 90)),
+                                                       FactoryWeight(PoopFactory((0, 0, 0, 255), "R"), range(95, 100))])
+        self.object_list = arcade.SpriteList()
+        self.length = 60 * 90
+        self.background = arcade.load_texture("resources/ModernOffice.jpg")
 
     def update(self):
         super().update()
@@ -507,6 +571,8 @@ class MyGame(arcade.Window):
             self.level = Level2()
         elif key == arcade.key.KEY_3:
             self.level = Level3()
+        elif key == arcade.key.KEY_4:
+            self.level = Level4()
         elif self.level is not None:
             self.level.on_key_press(key, key_modifiers)
 
