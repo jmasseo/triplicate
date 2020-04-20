@@ -329,7 +329,7 @@ class Level1(Level):
         self.bucket_list[0].center_x = SCREEN_WIDTH / 4
         self.bucket_list[1].center_x = (SCREEN_WIDTH / 4) * 2
         self.bucket_list[2].center_x = (SCREEN_WIDTH / 4) * 3
-
+        self.selected_bucket = 1
         self.object_loader = RGBObjectLoader()
         self.object_list = arcade.SpriteList()
         self.length = 60 * 120
@@ -351,6 +351,7 @@ class Level2(Level):
                                                                                          IsColorCriteria(
                                                                                              (0, 0, 255)))]))
         self.bucket_list[0].center_x = (SCREEN_WIDTH / 4) * 2
+        self.selected_bucket = 0
 
         self.object_loader = RBPObjectLoader()
         self.object_list = arcade.SpriteList()
@@ -380,6 +381,7 @@ class Level3(Level):
                                                                                          IsColorCriteria(
                                                                                              (0, 0, 255)))]))
         self.bucket_list[3].center_x = (SCREEN_WIDTH / 5) * 2
+        self.selected_bucket = 3
 
         self.object_loader = RGBPObjectLoader(60)
         self.object_list = arcade.SpriteList()
@@ -409,6 +411,7 @@ class Level4(Level):
         self.bucket_list[1].center_x = (SCREEN_WIDTH / 5) * 4
         self.bucket_list[2].center_x = (SCREEN_WIDTH / 5) * 3
         self.bucket_list[3].center_x = (SCREEN_WIDTH / 5) * 2
+        self.selected_bucket = 3
 
         self.object_loader = WeightedObjectLoader(60, [FactoryWeight(FormFactory((255, 0, 0, 255), "R"), range(0, 40)),
                                                        FactoryWeight(FormFactory((0, 255, 0, 255), "G"), range(40, 50)),
@@ -437,7 +440,7 @@ class Level5(Level):
                                                                                              (0, 0, 255)))]))
         self.bucket_list[0].center_x = SCREEN_WIDTH / 5
         self.bucket_list[1].center_x = (SCREEN_WIDTH / 5) * 4
-
+        self.selected_bucket = 0
         self.object_loader = WeightedObjectLoader(60, [FactoryWeight(FormFactory((255, 0, 0, 255), "R"), range(0, 40)),
                                                        FactoryWeight(FormFactory((0, 255, 0, 255), "G"), range(40, 50)),
                                                        FactoryWeight(FormFactory((0, 0, 255, 255), "B"), range(50, 90)),
