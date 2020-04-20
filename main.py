@@ -83,6 +83,25 @@ class RBPObjectLoader(ObjectLoader):
                 return Form((0, 0, 255, 255), "B")
 
 
+class RGBPObjectLoader(ObjectLoader):
+    def __init__(self,tr):
+        self.t = 0
+        self.tr = tr
+
+    def load(self, tick):
+        if tick % self.tr == 0:
+            self.t += 1
+            x = random.randrange(0, 4)
+            if x == 0:
+                return Form((255, 0, 0, 255), "R")
+            elif x == 1:
+                return Form((0, 255, 0, 255), "G")
+            elif x == 2:
+                return Form((0, 0, 255, 255), "B")
+            elif x == 3:
+                return Poop((255, 255, 255, 255), "S")
+
+
 class Level:
     def __init__(self):
         # You may want many lists. Lists for coins, monsters, etc.
@@ -292,6 +311,39 @@ class Level2(Level):
             arcade.draw_text("GAME OVER", (SCREEN_WIDTH / 5) * 1, (SCREEN_HEIGHT / 6) * 3, arcade.color.BLACK, 128)
 
 
+class Level3(Level):
+    def __init__(self):
+        super().__init__()
+        self.bucket_list = arcade.SpriteList()
+        self.bucket_list.append(Bucket((255, 0, 0, 255), [IsFormCriteria(), IsColorCriteria((255, 0, 0))]))
+        self.bucket_list.append(Bucket((0, 255, 0, 255), [IsFormCriteria(), IsColorCriteria((0, 255, 0))]))
+        self.bucket_list.append(Bucket((0, 0, 255, 255), [IsFormCriteria(), IsColorCriteria((0, 0, 255))]))
+        self.bucket_list[0].center_x = SCREEN_WIDTH / 5
+        self.bucket_list[1].center_x = (SCREEN_WIDTH / 5) * 4
+        self.bucket_list[2].center_x = (SCREEN_WIDTH / 5) * 3
+        self.bucket_list.append(Bucket((255, 0, 255, 255), [IsFormCriteria(), OrCriteria(IsColorCriteria((255, 0, 0)),
+                                                                                         IsColorCriteria(
+                                                                                             (0, 0, 255)))]))
+        self.bucket_list[0].center_x = (SCREEN_WIDTH / 5) * 2
+
+        self.object_loader = RGBPObjectLoader(60)
+        self.object_list = arcade.SpriteList()
+        self.length = 60 * 90
+        self.background = arcade.load_texture("resources/OfficeSpacePrinterScene.jpg")
+
+    def update(self):
+        super().update()
+        if self.tick > self.length:
+            self.run = False
+
+    def draw(self):
+        super().draw()
+        arcade.draw_text("Time Left {:d}".format(int((self.length - self.tick) / 60)), (SCREEN_WIDTH / 5) * 3,
+                         (SCREEN_HEIGHT / 6) * 5, arcade.color.BLACK, 48)
+        if self.tick > self.length:
+            arcade.draw_text("GAME OVER", (SCREEN_WIDTH / 5) * 1, (SCREEN_HEIGHT / 6) * 3, arcade.color.BLACK, 128)
+
+
 class Bucket(arcade.Sprite):
     """
     This class represents the coins on our screen. It is a child class of
@@ -434,6 +486,8 @@ class MyGame(arcade.Window):
             self.level = Level1()
         elif key == arcade.key.KEY_2:
             self.level = Level2()
+        elif key == arcade.key.KEY_3:
+            self.level = Level3()
         elif self.level is not None:
             self.level.on_key_press(key, key_modifiers)
 
