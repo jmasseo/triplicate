@@ -427,6 +427,34 @@ class Level4(Level):
         super().draw()
 
 
+class Level5(Level):
+    def __init__(self):
+        super().__init__()
+        self.bucket_list = arcade.SpriteList()
+        self.bucket_list.append(Bucket((0, 255, 0, 255), [IsFormCriteria(), IsColorCriteria((0, 255, 0))]))
+        self.bucket_list.append(Bucket((255, 0, 255, 255), [IsFormCriteria(), OrCriteria(IsColorCriteria((255, 0, 0)),
+                                                                                         IsColorCriteria(
+                                                                                             (0, 0, 255)))]))
+        self.bucket_list[0].center_x = SCREEN_WIDTH / 5
+        self.bucket_list[1].center_x = (SCREEN_WIDTH / 5) * 4
+
+        self.object_loader = WeightedObjectLoader(60, [FactoryWeight(FormFactory((255, 0, 0, 255), "R"), range(0, 40)),
+                                                       FactoryWeight(FormFactory((0, 255, 0, 255), "G"), range(40, 50)),
+                                                       FactoryWeight(FormFactory((0, 0, 255, 255), "B"), range(50, 90)),
+                                                       FactoryWeight(PoopFactory((0, 0, 0, 255), "R"), range(95, 100))])
+        self.object_list = arcade.SpriteList()
+        self.length = 60 * 180
+        self.background = arcade.load_texture("resources/OfficeScene1.jpg")
+
+    def update(self):
+        super().update()
+        if self.tick > self.length:
+            self.run = False
+
+    def draw(self):
+        super().draw()
+
+
 class Bucket(arcade.Sprite):
     """
     This class represents the coins on our screen. It is a child class of
@@ -530,7 +558,8 @@ class MyGame(arcade.Window):
 
     def setup(self):
         # Create your sprites and sprite lists here
-        self.level = Level1()
+        #self.level = Level1()
+        pass
 
     def on_draw(self):
         """
@@ -543,6 +572,8 @@ class MyGame(arcade.Window):
 
         if self.level is not None:
             self.level.draw()
+        else:
+            arcade.draw_text("Triplicate - A Falling Objects Game\nControls:\nA, Left = Move Bucket Left\nD, Right Arrow = Move Bucket Right\nTab = Next Bucket(hold shift for Prev)\nS = Stop all buckets\nSpace - Stop current bucket\n0 - Instructions\n1-5 - Select Level",0, 0, arcade.color.BLACK, 60)
         # Finish drawing and display the result
         # arcade.finish_render()
         # Call draw() on all your sprite lists below
@@ -565,6 +596,8 @@ class MyGame(arcade.Window):
         """
         if key == arcade.key.Q and key_modifiers & arcade.key.MOD_CTRL:
             exit(0)
+        elif key == arcade.key.KEY_0:
+            self.level = None
         elif key == arcade.key.KEY_1:
             self.level = Level1()
         elif key == arcade.key.KEY_2:
@@ -573,6 +606,8 @@ class MyGame(arcade.Window):
             self.level = Level3()
         elif key == arcade.key.KEY_4:
             self.level = Level4()
+        elif key == arcade.key.KEY_5:
+            self.level = Level5()
         elif self.level is not None:
             self.level.on_key_press(key, key_modifiers)
 
