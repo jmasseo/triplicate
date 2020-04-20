@@ -441,12 +441,12 @@ class Level5(Level):
         self.bucket_list[0].center_x = SCREEN_WIDTH / 5
         self.bucket_list[1].center_x = (SCREEN_WIDTH / 5) * 4
         self.selected_bucket = 0
-        self.object_loader = WeightedObjectLoader(60, [FactoryWeight(FormFactory((255, 0, 0, 255), "R"), range(0, 40)),
+        self.object_loader = WeightedObjectLoader(180, [FactoryWeight(FormFactory((255, 0, 0, 255), "R"), range(0, 40)),
                                                        FactoryWeight(FormFactory((0, 255, 0, 255), "G"), range(40, 50)),
                                                        FactoryWeight(FormFactory((0, 0, 255, 255), "B"), range(50, 90)),
                                                        FactoryWeight(PoopFactory((0, 0, 0, 255), "R"), range(95, 100))])
         self.object_list = arcade.SpriteList()
-        self.length = 60 * 180
+        self.length = 60 * 120
         self.background = arcade.load_texture("resources/OfficeScene1.jpg")
 
     def update(self):
