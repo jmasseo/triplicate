@@ -442,9 +442,12 @@ class Level5(Level):
         self.bucket_list[1].center_x = (SCREEN_WIDTH / 5) * 4
         self.selected_bucket = 0
         self.object_loader = WeightedObjectLoader(180, [FactoryWeight(FormFactory((255, 0, 0, 255), "R"), range(0, 40)),
-                                                       FactoryWeight(FormFactory((0, 255, 0, 255), "G"), range(40, 50)),
-                                                       FactoryWeight(FormFactory((0, 0, 255, 255), "B"), range(50, 90)),
-                                                       FactoryWeight(PoopFactory((0, 0, 0, 255), "R"), range(95, 100))])
+                                                        FactoryWeight(FormFactory((0, 255, 0, 255), "G"),
+                                                                      range(40, 50)),
+                                                        FactoryWeight(FormFactory((0, 0, 255, 255), "B"),
+                                                                      range(50, 90)),
+                                                        FactoryWeight(PoopFactory((0, 0, 0, 255), "R"),
+                                                                      range(95, 100))])
         self.object_list = arcade.SpriteList()
         self.length = 60 * 120
         self.background = arcade.load_texture("resources/OfficeScene1.jpg")
@@ -561,7 +564,7 @@ class MyGame(arcade.Window):
 
     def setup(self):
         # Create your sprites and sprite lists here
-        #self.level = Level1()
+        # self.level = Level1()
         pass
 
     def on_draw(self):
@@ -576,7 +579,9 @@ class MyGame(arcade.Window):
         if self.level is not None:
             self.level.draw()
         else:
-            arcade.draw_text("Triplicate - A Falling Objects Game\nControls:\nA, Left = Move Bucket Left\nD, Right Arrow = Move Bucket Right\nTab = Next Bucket(hold shift for Prev)\nS = Stop all buckets\nSpace - Stop current bucket\n0 - Instructions\n1-5 - Select Level",0, 0, arcade.color.BLACK, 60)
+            arcade.draw_text(
+                "Triplicate - A Falling Objects Game\nControls:\nA, Left = Move Bucket Left\nD, Right Arrow = Move Bucket Right\nTab = Next Bucket(hold shift for Prev)\nS = Stop all buckets\nSpace - Stop current bucket\n0 - Instructions\n1-5 - Select Level",
+                0, 0, arcade.color.BLACK, 60)
         # Finish drawing and display the result
         # arcade.finish_render()
         # Call draw() on all your sprite lists below
