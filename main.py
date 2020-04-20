@@ -29,13 +29,42 @@ class ObjectLoader:
         pass
 
 
+class Factory:
+    def create(self):
+        pass
+
+
+class FormFactory(Factory):
+    def __init__(self, color, val):
+        self.color = color
+        self.val = val
+
+    def create(self):
+        return Form(self.color, self.val)
+
+
+class PoopFactory(Factory):
+    def __init__(self, color, val):
+        self.color = color
+        self.val = val
+
+    def create(self):
+        return Poop(self.color, self.val)
+
+
 class WeightedObjectLoader(ObjectLoader):
-    def __init__(self, objs):
+    def __init__(self, tr, factories):
         super().__init__()
-        self.objs = objs
+        self.factories = factories
+        self.tr = tr
 
     def load(self, tick):
-        super().load(tick)
+        if tick % self.tr == 0:
+            self.t += 1
+            x = random.randrange(0, 100)
+            for factory in self.factories:
+                if x in factory.range:
+                    return factory.factory.create()
 
 
 class RBObjectLoader(ObjectLoader):
@@ -179,14 +208,18 @@ class Level:
             self.bucket_list.draw()
         if self.object_list is not None:
             self.object_list.draw()
-        arcade.draw_text("Score: {}Tick {}".format(self.score, self.tick), SCREEN_WIDTH / 5, SCREEN_HEIGHT / 6,
-                         arcade.color.BLACK, 12)
         if self.selected_bucket is not None:
             arcade.draw_rectangle_outline(self.bucket_list[self.selected_bucket].center_x,
                                           self.bucket_list[self.selected_bucket].center_y,
                                           self.bucket_list[self.selected_bucket].height * 1.2,
                                           self.bucket_list[self.selected_bucket].width * 1.2,
                                           self.bucket_list[self.selected_bucket].color, (self.tick % 12) + 2, 0)
+        arcade.draw_text("Time Left {:d}".format(int((self.length - self.tick) / 60)), (SCREEN_WIDTH / 6) * 4,
+                         SCREEN_HEIGHT - (SCREEN_HEIGHT/10), arcade.color.BLACK, 60)
+        arcade.draw_text("Score: {}".format(self.score), 0, (SCREEN_HEIGHT / 10)*9,
+                         arcade.color.RED, 64)
+        if self.tick > self.length:
+            arcade.draw_text("GAME OVER", (SCREEN_WIDTH / 5) * 1, (SCREEN_HEIGHT / 6) * 3, arcade.color.BLACK, 128)
 
     def next_bucket(self):
         # print(self.selected_bucket)
@@ -276,12 +309,6 @@ class Level1(Level):
 
     def draw(self):
         super().draw()
-        # Draw the face
-
-        arcade.draw_text("Time Left {:d}".format(int((self.length - self.tick) / 60)), (SCREEN_WIDTH / 5) * 3,
-                         (SCREEN_HEIGHT / 6) * 5, arcade.color.BLACK, 48)
-        if self.tick > self.length:
-            arcade.draw_text("GAME OVER", (SCREEN_WIDTH / 5) * 1, (SCREEN_HEIGHT / 6) * 3, arcade.color.BLACK, 128)
 
 
 class Level2(Level):
@@ -305,10 +332,6 @@ class Level2(Level):
 
     def draw(self):
         super().draw()
-        arcade.draw_text("Time Left {:d}".format(int((self.length - self.tick) / 60)), (SCREEN_WIDTH / 5) * 3,
-                         (SCREEN_HEIGHT / 6) * 5, arcade.color.BLACK, 48)
-        if self.tick > self.length:
-            arcade.draw_text("GAME OVER", (SCREEN_WIDTH / 5) * 1, (SCREEN_HEIGHT / 6) * 3, arcade.color.BLACK, 128)
 
 
 class Level3(Level):
@@ -324,7 +347,7 @@ class Level3(Level):
         self.bucket_list.append(Bucket((255, 0, 255, 255), [IsFormCriteria(), OrCriteria(IsColorCriteria((255, 0, 0)),
                                                                                          IsColorCriteria(
                                                                                              (0, 0, 255)))]))
-        self.bucket_list[0].center_x = (SCREEN_WIDTH / 5) * 2
+        self.bucket_list[3].center_x = (SCREEN_WIDTH / 5) * 2
 
         self.object_loader = RGBPObjectLoader(60)
         self.object_list = arcade.SpriteList()
@@ -338,10 +361,6 @@ class Level3(Level):
 
     def draw(self):
         super().draw()
-        arcade.draw_text("Time Left {:d}".format(int((self.length - self.tick) / 60)), (SCREEN_WIDTH / 5) * 3,
-                         (SCREEN_HEIGHT / 6) * 5, arcade.color.BLACK, 48)
-        if self.tick > self.length:
-            arcade.draw_text("GAME OVER", (SCREEN_WIDTH / 5) * 1, (SCREEN_HEIGHT / 6) * 3, arcade.color.BLACK, 128)
 
 
 class Bucket(arcade.Sprite):
