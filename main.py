@@ -43,6 +43,15 @@ class FormFactory(Factory):
         return Form(self.color, self.val)
 
 
+class CarFactory(Factory):
+    def __init__(self, color, val):
+        self.color = color
+        self.val = val
+
+    def create(self):
+        return SwervingCar1Up(self.color, self.val)
+
+
 class PoopFactory(Factory):
     def __init__(self, color, val):
         self.color = color
@@ -56,6 +65,29 @@ class FactoryWeight:
     def __init__(self, factory, r):
         self.factory = factory
         self.range = r
+
+
+def GetLaneCenter(j):
+    return (SCREEN_WIDTH / 2) - ((160 * 5)/2) + (j * 160) + 80
+
+
+class WeightedObjectLaneLoader(ObjectLoader):
+        def __init__(self, tr, factories):
+            super().__init__()
+            self.factories = factories
+            self.tr = tr
+            self.t = 0
+
+        def load(self, tick):
+            if tick % self.tr == 0:
+                self.t += 1
+                x = random.randrange(0, 100)
+                for factory in self.factories:
+                    if x in factory.range:
+                        o = factory.factory.create()
+                        o.center_x = GetLaneCenter(random.randrange(0, 5))
+                        return o
+            return None
 
 
 class WeightedObjectLoader(ObjectLoader):
@@ -300,41 +332,34 @@ class CarLevel(Level):
         self.selected_bucket = 0
         self.object_list = arcade.SpriteList()
         self.length = 60 * 120
-
-        def GetLaneCenter(j):
-            return (SCREEN_WIDTH / 2) - ((160 * 5)/2) + (j * 160) + 80
-
-        class CarFactory(Factory):
-            def __init__(self, color, val):
-                self.color = color
-                self.val = val
-
-            def create(self):
-                return SwervingCar1Up(self.color, self.val)
-
-
-        class WeightedObjectLaneLoader(ObjectLoader):
-            def __init__(self, tr, factories):
-                super().__init__()
-                self.factories = factories
-                self.tr = tr
-                self.t = 0
-
-            def load(self, tick):
-                if tick % self.tr == 0:
-                    self.t += 1
-                    x = random.randrange(0, 100)
-                    for factory in self.factories:
-                        if x in factory.range:
-                            o = factory.factory.create()
-                            o.center_x = GetLaneCenter(random.randrange(0, 5))
-                            return o
-                return None
+        self.tree_tick = False
 
         self.object_loader = WeightedObjectLaneLoader(60, [FactoryWeight(CarFactory((255, 0, 0, 255), "R"), range(0, 10)),
-                                                       FactoryWeight(CarFactory((0, 255, 0, 255), "G"), range(40, 50)),
-                                                       FactoryWeight(CarFactory((0, 0, 255, 255), "B"), range(50, 90)),
-                                                       FactoryWeight(PoopFactory((255, 255, 255, 255), "R"), range(95, 100))])
+                                                           FactoryWeight(CarFactory((0, 255, 0, 255), "G"), range(40, 50)),
+                                                           FactoryWeight(CarFactory((0, 0, 255, 255), "B"), range(50, 90)),
+                                                           FactoryWeight(PoopFactory((255, 255, 255, 255), "R"), range(95, 100))])
+
+
+
+    def update(self):
+        super().update()
+        if not self.run:
+            return
+        if (self.tick % 60) == 0:
+            self.tree_tick = not self.tree_tick
+            tree1 = Tree((255,255,255,255),"Tree")
+            tree1.center_x = GetLaneCenter(-1) + (-80 if self.tree_tick else 0)
+            tree1.center_y = SCREEN_HEIGHT + 20
+            tree2 = Tree((255,255,255,255),"Tree")
+            tree2.center_x = GetLaneCenter(5) + (80 if self.tree_tick else 0)
+            tree2.center_y = SCREEN_HEIGHT + 20
+
+            self.object_list.append(tree1)
+            self.object_list.append(tree2)
+            print("Created trees")
+        if self.tick > self.length:
+            self.run = False
+
 
     def draw_road(self, cx, cy, sx, sy, offset):
         # Clear screen and start render process
@@ -641,7 +666,7 @@ class Car1Up(FallingObject):
 
 class SwervingCar1Up(FallingObject):
     def __init__(self, color, val):
-        super().__init__("resources/car-enemy.png", 8)
+        super().__init__("resources/car-enemy.png", 7)
         self.val = val
         self.color = color
         self.type = "Car"
@@ -691,13 +716,13 @@ class SwervingCar2Up(FallingObject):
 
 class Tree(FallingObject):
     def __init__(self, color, val):
-        super().__init__("resources/tree.png", 0.05)
+        super().__init__("resources/tree.png", 4)
         self.val = val
         self.color = color
         self.type = "Poop"
-        self.v_y = 1
+        self.v_y = -8
         self.pass_val = 100
-        self.fail_val = -500
+        self.fail_val = -1500
         self.miss_val = 0
 
 
