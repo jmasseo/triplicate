@@ -14,7 +14,7 @@ from Criteria import *
 SCREEN_WIDTH = 1280
 SCREEN_HEIGHT = 720
 SCREEN_TITLE = "Triplicate"
-DEFAULT_GRAVITY = 3
+DEFAULT_GRAVITY = -3
 RESOURCE_PATH = "resources"
 levels = []
 # ON_KEY_RELEASE apply negative vector on key release.
@@ -184,7 +184,6 @@ class Level:
             if self.object_loader is not None:
                 ret = self.object_loader.load(self.tick)
                 if ret is not None:
-                    ret.reset_pos()
                     self.object_list.append(ret)
             if self.bucket_list is not None:
                 for bucket in self.bucket_list:
@@ -209,33 +208,6 @@ class Level:
             arcade.draw_lrwh_rectangle_textured(0, 0,
                                                 SCREEN_WIDTH, SCREEN_HEIGHT,
                                                 self.background)
-        else:
-            x = 300
-            y = 300
-            radius = 200
-            arcade.draw_circle_filled(x, y, radius, arcade.color.YELLOW)
-
-            # Draw the right eye
-            x = 370
-            y = 350
-            radius = 20
-            arcade.draw_circle_filled(x, y, radius, arcade.color.BLACK)
-
-            # Draw the left eye
-            x = 230
-            y = 350
-            radius = 20
-            arcade.draw_circle_filled(x, y, radius, arcade.color.BLACK)
-
-            # Draw the smile
-            x = 300
-            y = 280
-            width = 120
-            height = 100
-            start_angle = 190
-            end_angle = 350
-            arcade.draw_arc_outline(x, y, width, height, arcade.color.BLACK,
-                                    start_angle, end_angle, 10)
         if self.bucket_list is not None:
             self.bucket_list.draw()
         if self.object_list is not None:
@@ -319,6 +291,76 @@ class Level:
                 self.move_bucket(-1)
 
 
+class CarLevel(Level):
+    def __init__(self):
+        super().__init__()
+        self.bucket_list = arcade.SpriteList()
+        self.bucket_list.append(Bucket((255, 0, 0, 255), [IsFormCriteria(), IsColorCriteria((255, 0, 0))]))
+        self.bucket_list[0].center_x = SCREEN_WIDTH / 4
+        self.selected_bucket = 0
+        self.object_list = arcade.SpriteList()
+        self.length = 60 * 120
+
+        def GetLaneCenter(j):
+            return (SCREEN_WIDTH / 2) - ((160 * 5)/2) + (j * 160) + 80
+
+        class CarFactory(Factory):
+            def __init__(self, color, val):
+                self.color = color
+                self.val = val
+
+            def create(self):
+                return SwervingCar1Up(self.color, self.val)
+
+
+        class WeightedObjectLaneLoader(ObjectLoader):
+            def __init__(self, tr, factories):
+                super().__init__()
+                self.factories = factories
+                self.tr = tr
+                self.t = 0
+
+            def load(self, tick):
+                if tick % self.tr == 0:
+                    self.t += 1
+                    x = random.randrange(0, 100)
+                    for factory in self.factories:
+                        if x in factory.range:
+                            o = factory.factory.create()
+                            o.center_x = GetLaneCenter(random.randrange(0, 5))
+                            return o
+                return None
+
+        self.object_loader = WeightedObjectLaneLoader(60, [FactoryWeight(CarFactory((255, 0, 0, 255), "R"), range(0, 10)),
+                                                       FactoryWeight(CarFactory((0, 255, 0, 255), "G"), range(40, 50)),
+                                                       FactoryWeight(CarFactory((0, 0, 255, 255), "B"), range(50, 90)),
+                                                       FactoryWeight(PoopFactory((255, 255, 255, 255), "R"), range(95, 100))])
+
+    def draw_road(self, cx, cy, sx, sy, offset):
+        # Clear screen and start render process
+        zx = (cx - (sx / 2))
+        zy = (cy - (sy / 2))
+        line_height = 64
+        margin_x = 32
+        lane_width = (128 + margin_x)
+        arcade.draw_rectangle_filled(cx, cy, sx, sy, arcade.color.BATTLESHIP_GREY)
+        num_lines = (sy / line_height) / 4
+        num_lanes = (sx / lane_width) - 1
+        j = 0
+        while j < num_lanes:
+            j += 1
+            i = 0
+            y_pos = offset
+            while i < num_lines:
+                arcade.draw_rectangle_filled(zx + (j * lane_width), zy + offset + (i * line_height * 4), (margin_x / 2),
+                                             line_height, arcade.color.WHITE_SMOKE)
+                i += 1
+
+    def draw(self):
+        self.draw_road((SCREEN_WIDTH / 2), SCREEN_HEIGHT / 2, (160 * 5), SCREEN_HEIGHT+512, -((self.tick*8) % 256))
+        super().draw()
+
+
 class Level1(Level):
     def __init__(self):
         super().__init__()
@@ -340,6 +382,32 @@ class Level1(Level):
             self.run = False
 
     def draw(self):
+        x = 300
+        y = 300
+        radius = 200
+        arcade.draw_circle_filled(x, y, radius, arcade.color.YELLOW)
+
+        # Draw the right eye
+        x = 370
+        y = 350
+        radius = 20
+        arcade.draw_circle_filled(x, y, radius, arcade.color.BLACK)
+
+        # Draw the left eye
+        x = 230
+        y = 350
+        radius = 20
+        arcade.draw_circle_filled(x, y, radius, arcade.color.BLACK)
+
+        # Draw the smile
+        x = 300
+        y = 280
+        width = 120
+        height = 100
+        start_angle = 190
+        end_angle = 350
+        arcade.draw_arc_outline(x, y, width, height, arcade.color.BLACK,
+                                start_angle, end_angle, 10)
         super().draw()
 
 
@@ -416,7 +484,7 @@ class Level4(Level):
         self.object_loader = WeightedObjectLoader(60, [FactoryWeight(FormFactory((255, 0, 0, 255), "R"), range(0, 40)),
                                                        FactoryWeight(FormFactory((0, 255, 0, 255), "G"), range(40, 50)),
                                                        FactoryWeight(FormFactory((0, 0, 255, 255), "B"), range(50, 90)),
-                                                       FactoryWeight(PoopFactory((0, 0, 0, 255), "R"), range(95, 100))])
+                                                       FactoryWeight(PoopFactory((255, 255, 255, 255), "R"), range(95, 100))])
         self.object_list = arcade.SpriteList()
         self.length = 60 * 90
         self.background = arcade.load_texture("resources/ModernOffice.jpg")
@@ -446,7 +514,7 @@ class Level5(Level):
                                                                       range(40, 50)),
                                                         FactoryWeight(FormFactory((0, 0, 255, 255), "B"),
                                                                       range(50, 90)),
-                                                        FactoryWeight(PoopFactory((0, 0, 0, 255), "R"),
+                                                        FactoryWeight(PoopFactory((200, 50, 100, 255), "S"),
                                                                       range(95, 100))])
         self.object_list = arcade.SpriteList()
         self.length = 60 * 120
@@ -495,10 +563,15 @@ class Bucket(arcade.Sprite):
 class FallingObject(arcade.Sprite):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.gravity = DEFAULT_GRAVITY
+        self.v_y = DEFAULT_GRAVITY
         self.pass_val = 100
         self.fail_val = -100
         self.miss_val = -50
+        self.type = "FallingObject"
+        self.v_x = 0
+        self.center_y = random.randrange(SCREEN_HEIGHT + 20,
+                                         SCREEN_HEIGHT + 100)
+        self.center_x = random.randrange(SCREEN_WIDTH)
 
     def reset_pos(self):
         # Reset the coin to a random spot above the screen
@@ -511,12 +584,121 @@ class FallingObject(arcade.Sprite):
 
     def update(self):
         # Move the coin
-        self.center_y -= self.gravity
-
-        # See if the coin has fallen off the bottom of the screen.
-        # If so, process the miss
+        self.center_y += self.v_y
+        self.center_x += self.v_x
+        if self.center_x >= SCREEN_WIDTH:
+            self.center_x = SCREEN_WIDTH - 1
+            self.v_x = 0
+        if self.center_x <= 0:
+            self.center_x = 1
+            self.v_x = 0
         if self.top < 0:
             self.process_miss()
+
+
+class Car1Down(FallingObject):
+    def __init__(self, color, val):
+        super().__init__("resources/car-enemy2.png", 8)
+        self.val = val
+        self.color = color
+        self.type = "Car"
+        self.v_y = DEFAULT_GRAVITY
+        self.pass_val = 100
+        self.fail_val = -200
+        self.miss_val = 50
+
+
+class SwervingCar1Down(FallingObject):
+    def __init__(self, color, val):
+        super().__init__("resources/car-enemy2.png", 8)
+        self.val = val
+        self.color = color
+        self.type = "Car"
+        self.v_y = DEFAULT_GRAVITY * 0.5
+        self.pass_val = 100
+        self.fail_val = -200
+        self.miss_val = 100
+
+    def update(self):
+        chance = random.randrange(0,100)
+        if chance < 5:
+            # Start Swerving
+            self.v_x = 1
+        super().update()
+
+
+class Car1Up(FallingObject):
+    def __init__(self, color, val):
+        super().__init__("resources/car-enemy.png", 8)
+        self.val = val
+        self.color = color
+        self.type = "Car"
+        self.v_y = DEFAULT_GRAVITY
+        self.pass_val = 100
+        self.fail_val = -200
+        self.miss_val = 50
+
+
+class SwervingCar1Up(FallingObject):
+    def __init__(self, color, val):
+        super().__init__("resources/car-enemy.png", 8)
+        self.val = val
+        self.color = color
+        self.type = "Car"
+        self.v_y = DEFAULT_GRAVITY * 2
+        self.pass_val = 100
+        self.fail_val = -200
+        self.miss_val = 100
+
+    def update(self):
+        chance = random.randrange(0,100 * 60)
+        if chance == 1:
+            # Start Swerving
+            self.v_x = random.randrange(0,6)
+        super().update()
+
+
+class Car2Up(FallingObject):
+    def __init__(self, color, val):
+        super().__init__("resources/car-player.png", 8)
+        self.val = val
+        self.color = color
+        self.type = "Car"
+        self.v_y = DEFAULT_GRAVITY * 0.25
+        self.pass_val = 100
+        self.fail_val = -200
+        self.miss_val = 50
+
+
+class SwervingCar2Up(FallingObject):
+    def __init__(self, color, val):
+        super().__init__("resources/car-player.png", 8)
+        self.val = val
+        self.color = color
+        self.type = "Car"
+        self.v_y = DEFAULT_GRAVITY * 0.25
+        self.pass_val = 100
+        self.fail_val = -200
+        self.miss_val = 100
+
+    def update(self):
+        chance = random.randrange(0,100 * 60 * 5)
+        if chance == 1:
+            # Start Swerving
+            self.v_x = random.randrange(0,6)
+        super().update()
+
+
+class Tree(FallingObject):
+    def __init__(self, color, val):
+        super().__init__("resources/tree.png", 0.05)
+        self.val = val
+        self.color = color
+        self.type = "Poop"
+        self.v_y = 1
+        self.pass_val = 100
+        self.fail_val = -500
+        self.miss_val = 0
 
 
 class Poop(FallingObject):
@@ -525,7 +707,7 @@ class Poop(FallingObject):
         self.val = val
         self.color = color
         self.type = "Poop"
-        self.gravity = DEFAULT_GRAVITY * 0.5
+        self.v_y = DEFAULT_GRAVITY * 0.5
         self.pass_val = 100
         self.fail_val = -500
         self.miss_val = 50
@@ -542,7 +724,7 @@ class Form(FallingObject):
         self.val = val
         self.color = color
         self.type = "Form"
-        self.gravity = DEFAULT_GRAVITY
+        self.v_y = DEFAULT_GRAVITY
 
 
 class MyGame(arcade.Window):
@@ -602,7 +784,7 @@ class MyGame(arcade.Window):
         For a full list of keys, see:
         http://arcade.academy/arcade.key.html
         """
-        if key == arcade.key.Q and key_modifiers & arcade.key.MOD_CTRL:
+        if key == arcade.key.Q: # and key_modifiers & arcade.key.MOD_CTRL:
             exit(0)
         elif key == arcade.key.KEY_0:
             self.level = None
@@ -616,6 +798,8 @@ class MyGame(arcade.Window):
             self.level = Level4()
         elif key == arcade.key.KEY_5:
             self.level = Level5()
+        elif key == arcade.key.KEY_6:
+            self.level = CarLevel()
         elif self.level is not None:
             self.level.on_key_press(key, key_modifiers)
 
