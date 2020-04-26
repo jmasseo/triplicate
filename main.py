@@ -910,7 +910,7 @@ class MyGame(arcade.Window):
             self.level.draw()
         else:
             arcade.draw_text(
-                "Triplicate - A Falling Objects Game\nControls:\nA, Left = Move Bucket Left\nD, Right Arrow = Move Bucket Right\nTab = Next Bucket(hold shift for Prev)\nS = Stop all buckets\nSpace - Stop current bucket\n0 - Instructions\n1-5 - Select Level",
+                "Triplicate - A Falling Objects Game\nControls:\nA, Left = Move Bucket Left\nD, Right Arrow = Move Bucket Right\nTab = Next Bucket(hold shift for Prev)\nS = Stop all buckets\nSpace - Stop current bucket\n0 - Instructions\n1-7 - Select Level\n1-5 are Normal, 6 is Car, 7 is Space",
                 0, 0, arcade.color.BLACK, 60)
         # Finish drawing and display the result
         # arcade.finish_render()
