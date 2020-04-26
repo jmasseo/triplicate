@@ -9,6 +9,7 @@ python -m arcade.examples.starting_template
 """
 import arcade
 import random
+import math
 from Criteria import *
 
 SCREEN_WIDTH = 1280
@@ -52,6 +53,16 @@ class CarFactory(Factory):
         return SwervingCar1Up(self.color, self.val)
 
 
+class ShipFactory(Factory):
+    def __init__(self, color, val, level):
+        self.color = color
+        self.val = val
+        self.level = level
+
+    def create(self):
+        return Ship(self.color, self.val, self.level)
+
+
 class PoopFactory(Factory):
     def __init__(self, color, val):
         self.color = color
@@ -65,7 +76,6 @@ class FactoryWeight:
     def __init__(self, factory, r):
         self.factory = factory
         self.range = r
-
 
 def GetLaneCenter(j):
     return (SCREEN_WIDTH / 2) - ((160 * 5)/2) + (j * 160) + 80
@@ -323,6 +333,65 @@ class Level:
                 self.move_bucket(-1)
 
 
+class SpaceLevel(Level):
+    def __init__(self):
+        super().__init__()
+        self.bucket_list = arcade.SpriteList()
+        self.bucket_list.append(Bucket((255, 0, 0, 255), [IsFormCriteria(), IsColorCriteria((255, 0, 0))]))
+        self.bucket_list[0].center_x = SCREEN_WIDTH / 4
+        self.selected_bucket = 0
+        self.object_list = arcade.SpriteList()
+        self.length = 60 * 120
+        self.tree_tick = False
+        self.background = arcade.load_texture("resources/Background-4.png")
+        self.object_loader = WeightedObjectLaneLoader(60, [FactoryWeight(ShipFactory((255, 0, 0, 255), "R", self), range(0, 10)),
+                                                           FactoryWeight(ShipFactory((0, 255, 0, 255), "G", self), range(40, 50)),
+                                                           FactoryWeight(ShipFactory((0, 0, 255, 255), "B", self), range(50, 90)),
+                                                           FactoryWeight(PoopFactory((255, 255, 255, 255), "R"), range(95, 100))])
+
+    def update(self):
+        super().update()
+        if not self.run:
+            return
+        if (self.tick % 60) == 0:
+            self.tree_tick = not self.tree_tick
+            tree1 = Tree((255,255,255,255),"Tree")
+            tree1.center_x = GetLaneCenter(-1) + (-80 if self.tree_tick else 0)
+            tree1.center_y = SCREEN_HEIGHT + 20
+            tree2 = Tree((255,255,255,255),"Tree")
+            tree2.center_x = GetLaneCenter(5) + (80 if self.tree_tick else 0)
+            tree2.center_y = SCREEN_HEIGHT + 20
+            self.object_list.append(tree1)
+            self.object_list.append(tree2)
+        if self.tick > self.length:
+            self.run = False
+
+
+    def draw_road(self, cx, cy, sx, sy, offset):
+        # Clear screen and start render process
+        zx = (cx - (sx / 2))
+        zy = (cy - (sy / 2))
+        line_height = 64
+        margin_x = 32
+        lane_width = (128 + margin_x)
+        arcade.draw_rectangle_filled(cx, cy, sx, sy, arcade.color.BATTLESHIP_GREY)
+        num_lines = (sy / line_height) / 4
+        num_lanes = (sx / lane_width) - 1
+        j = 0
+        while j < num_lanes:
+            j += 1
+            i = 0
+            y_pos = offset
+            while i < num_lines:
+                arcade.draw_rectangle_filled(zx + (j * lane_width), zy + offset + (i * line_height * 4), (margin_x / 2),
+                                             line_height, arcade.color.WHITE_SMOKE)
+                i += 1
+
+    def draw(self):
+        self.draw_road((SCREEN_WIDTH / 2), SCREEN_HEIGHT / 2, (160 * 5), SCREEN_HEIGHT+512, -((self.tick*8) % 256))
+        super().draw()
+
+
 class CarLevel(Level):
     def __init__(self):
         super().__init__()
@@ -339,8 +408,6 @@ class CarLevel(Level):
                                                            FactoryWeight(CarFactory((0, 0, 255, 255), "B"), range(50, 90)),
                                                            FactoryWeight(PoopFactory((255, 255, 255, 255), "R"), range(95, 100))])
 
-
-
     def update(self):
         super().update()
         if not self.run:
@@ -353,10 +420,8 @@ class CarLevel(Level):
             tree2 = Tree((255,255,255,255),"Tree")
             tree2.center_x = GetLaneCenter(5) + (80 if self.tree_tick else 0)
             tree2.center_y = SCREEN_HEIGHT + 20
-
             self.object_list.append(tree1)
             self.object_list.append(tree2)
-            print("Created trees")
         if self.tick > self.length:
             self.run = False
 
@@ -597,6 +662,7 @@ class FallingObject(arcade.Sprite):
         self.center_y = random.randrange(SCREEN_HEIGHT + 20,
                                          SCREEN_HEIGHT + 100)
         self.center_x = random.randrange(SCREEN_WIDTH)
+        self.tick = 0
 
     def reset_pos(self):
         # Reset the coin to a random spot above the screen
@@ -609,6 +675,7 @@ class FallingObject(arcade.Sprite):
 
     def update(self):
         # Move the coin
+        self.tick += 1
         self.center_y += self.v_y
         self.center_x += self.v_x
         if self.center_x >= SCREEN_WIDTH:
@@ -619,6 +686,62 @@ class FallingObject(arcade.Sprite):
             self.v_x = 0
         if self.top < 0:
             self.process_miss()
+
+
+class Bullet(FallingObject):
+    def __init__(self, color, val):
+        super().__init__("resources/pencil2.png", 1)
+        self.val = val
+        self.color = color
+        self.type = "Bullet"
+        self.v_y = DEFAULT_GRAVITY * 0.5
+        self.pass_val = 100
+        self.fail_val = -200
+        self.miss_val = 10
+
+    def shootat(self,target):
+        BULLET_SPEED = random.randrange(2,8)
+        start_x = self.center_x
+        start_y = self.center_y
+
+        # Get the destination location for the bullet
+        dest_x = target.center_x + random.randrange(-200,200)
+        dest_y = target.center_y + random.randrange(-200,200)
+
+        # Do math to calculate how to get the bullet to the destination.
+        # Calculation the angle in radians between the start points
+        # and end points. This is the angle the bullet will travel.
+        x_diff = dest_x - start_x
+        y_diff = dest_y - start_y
+        angle = math.atan2(y_diff, x_diff)
+
+        # Taking into account the angle, calculate our change_x
+        # and change_y. Velocity is how fast the bullet travels.
+        self.v_x = math.cos(angle) * BULLET_SPEED
+        self.v_y = math.sin(angle) * BULLET_SPEED
+
+
+class Ship(FallingObject):
+    def __init__(self, color, val, level):
+        super().__init__("resources/ships/ship_{}.png".format(random.randrange(0,31)), 0.5)
+        self.level = level
+        self.val = val
+        self.color = color
+        self.type = "Ship"
+        self.v_y = DEFAULT_GRAVITY * 0.5
+        self.pass_val = 100
+        self.fail_val = -200
+        self.miss_val = 100
+
+    def update(self):
+        super().update()
+        if (self.tick % 60) == 0:
+            if random.randrange(0,2) == 0:
+                b = Bullet((255,255,255,255),self.val)
+                b.shootat(self.level.bucket_list[self.level.selected_bucket])
+                self.level.object_list.append(b)
+                b.center_x = self.center_x
+                b.center_y = self.center_y
 
 
 class Car1Down(FallingObject):
@@ -825,6 +948,8 @@ class MyGame(arcade.Window):
             self.level = Level5()
         elif key == arcade.key.KEY_6:
             self.level = CarLevel()
+        elif key == arcade.key.KEY_7:
+            self.level = SpaceLevel()
         elif self.level is not None:
             self.level.on_key_press(key, key_modifiers)
 
