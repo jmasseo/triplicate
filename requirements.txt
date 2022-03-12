@@ -4,7 +4,7 @@ attrs==19.3.0
 future==0.18.2
 numpy==1.18.2
 pefile==2019.4.18
-Pillow==7.1.1
+Pillow==9.0.1
 pyglet==1.5.3
 PyInstaller==3.6
 pytiled-parser==0.9.3
